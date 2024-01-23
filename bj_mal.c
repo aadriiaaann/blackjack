@@ -6,93 +6,95 @@
 #define CARD_VALUES 13
 #define MAX_HAND 10
 
-// Representación de las cartas
+// Représentation des cartes
 char *values[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
-char *suits[] = {"Corazones", "Diamantes", "Picas", "Tréboles"};
+char *suits[] = {"Cœurs", "Carreaux", "Piques", "Trèfles"};
 
-// Estructura para una carta
-struct carta {
-    char *value;
-    char *suit;
-    int numericValue;
+struct carte {
+    char *valeur;
+    char *couleur;
+    int valeurNumerique;
 };
 
-struct carta deck[TOTAL_CARDS];
-struct carta playerHand[MAX_HAND];
-int numPlayerCards = 0;
-int playerSum = 0;
-char choice;
-
-void initializeDeck() {
+// Fonctions pour la gestion du jeu
+void initialiserDeck(struct carte deck[]) {
     for (int i = 0; i < TOTAL_CARDS; i++) {
-        deck[i].value = values[i % CARD_VALUES];
-        deck[i].suit = suits[i / CARD_VALUES];
-        deck[i].numericValue = (i % CARD_VALUES) + 1;
-        if (deck[i].numericValue > 10) deck[i].numericValue = 10;
-        if (i % CARD_VALUES == CARD_VALUES - 1) deck[i].numericValue = 11;
+        deck[i].valeur = values[i % CARD_VALUES];
+        deck[i].couleur = suits[i / CARD_VALUES];
+        deck[i].valeurNumerique = (i % CARD_VALUES) + 1;
+        if (deck[i].valeurNumerique > 10) deck[i].valeurNumerique = 10;
+        if (i % CARD_VALUES == CARD_VALUES - 1) deck[i].valeurNumerique = 11;
     }
 }
 
-void shuffleDeck() {
+void melangerDeck(struct carte deck[]) {
     srand(time(NULL));
     for (int i = 0; i < TOTAL_CARDS; i++) {
         int j = rand() % TOTAL_CARDS;
-        struct carta temp = deck[i];
+        struct carte temp = deck[i];
         deck[i] = deck[j];
         deck[j] = temp;
     }
 }
 
-void showCard(struct carta c) {
-    printf("  %s de %s\n", c.value, c.suit);
+void afficherCarte(struct carte c) {
+    printf("  %s de %s\n", c.valeur, c.couleur);
 }
 
-int sumHand(struct carta hand[], int numCards) {
-    int sum = 0;
-    for (int i = 0; i < numCards; i++) {
-        sum += hand[i].numericValue;
+int sommeMain(struct carte main[], int numCartes) {
+    int somme = 0;
+    for (int i = 0; i < numCartes; i++) {
+        somme += main[i].valeurNumerique;
     }
-    return sum;
+    return somme;
+}
+
+void distribuerCartesInitiales(struct carte deck[], struct carte mainJoueur[], int *numCartesJoueur, int *sommeJoueur) {
+    mainJoueur[*numCartesJoueur++] = deck[0];
+    mainJoueur[*numCartesJoueur++] = deck[1];
+    *sommeJoueur = sommeMain(mainJoueur, *numCartesJoueur);
+}
+
+void tirerCarte(struct carte deck[], struct carte mainJoueur[], int *numCartesJoueur, int *sommeJoueur) {
+    mainJoueur[*numCartesJoueur] = deck[*numCartesJoueur + 1];
+    *sommeJoueur = sommeMain(mainJoueur, ++(*numCartesJoueur));
+
+    printf("Nouvelle carte :\n");
+    afficherCarte(mainJoueur[*numCartesJoueur - 2]);
+    printf("Somme totale : %d\n", *sommeJoueur);
 }
 
 int main() {
-    initializeDeck();
-    shuffleDeck();
+    struct carte deck[TOTAL_CARDS];
+    struct carte mainJoueur[MAX_HAND];
+    int numCartesJoueur = 0;
+    int sommeJoueur = 0;
+    char choix;
 
-    printf("Bienvenido al Blackjack!\n");
+    initialiserDeck(deck);
+    melangerDeck(deck);
 
-    playerHand[numPlayerCards++] = deck[0];
-    playerHand[numPlayerCards++] = deck[1];
-    playerSum = sumHand(playerHand, numPlayerCards);
+    printf("Bienvenue au Blackjack !\n");
 
-    printf("Tus cartas:\n");
-    showCard(playerHand[0]);
-    showCard(playerHand[1]);
-    printf("Suma total: %d\n", playerSum);
+    distribuerCartesInitiales(deck, mainJoueur, &numCartesJoueur, &sommeJoueur);
 
-    while (playerSum < 21) {
-        printf("¿Quieres otra carta? (s/n): ");
-        scanf(" %c", &choice);
+    printf("Vos cartes :\n");
+    afficherCarte(mainJoueur[0]);
+    afficherCarte(mainJoueur[1]);
+    printf("Somme totale : %d\n", sommeJoueur);
 
-        if (choice == 's' || choice == 'S') {
-            playerHand[numPlayerCards] = deck[numPlayerCards + 1];
-            playerSum = sumHand(playerHand, ++numPlayerCards);
+    while (sommeJoueur < 21) {
+        printf("Voulez-vous une autre carte ? (o/n) : ");
+        scanf(" %c", &choix);
 
-            printf("Nueva carta:\n");
-            showCard(playerHand[numPlayerCards - 1]);
-            printf("Suma total: %d\n", playerSum);
+        if (choix == 'o' || choix == 'O') {
+            tirerCarte(deck, mainJoueur, &numCartesJoueur, &sommeJoueur);
         } else {
             break;
         }
     }
 
-    if (playerSum == 21) {
-        printf("¡Blackjack! Has ganado.\n");
-    } else if (playerSum > 21) {
-        printf("Te has pasado. Fin del juego.\n");
-    } else {
-        printf("Te has plantado con %d. Fin del juego.\n", playerSum);
-    }
+    // Reste du jeu et résultats
 
     return 0;
 }
